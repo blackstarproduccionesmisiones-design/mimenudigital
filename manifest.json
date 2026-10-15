@@ -1,13 +1,13 @@
 {
   "name": "Menú Digital",
-  "short_name": "Menú",
+  "short_name": "LoDePichi",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "https://i.pinimg.com/736x/53/d1/f2/53d1f23735e9820603f50014a13a7e5b.jpg",
+      "src": "https://i.pinimg.com/736x/0b/fe/1f/0bfe1f7ebdda9dc951d03960ce0c3af5.jpg",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
