@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menú Digital</title>
+    <link rel="manifest" href="./manifest.json">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Librería oficial de Supabase -->
@@ -423,6 +424,13 @@
 
         // Iniciar carga al abrir la página
         cargarMenu();
+        // Registro de Service Worker para PWA (Instalación)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('data:text/javascript,self.addEventListener("fetch", function (event) {});')
+                .catch(err => console.log('Error al registrar service worker:', err));
+            });
+        }
     </script>
 </body>
 </html>
