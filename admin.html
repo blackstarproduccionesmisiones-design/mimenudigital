@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Nexo Digital</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* Pantalla de Login */
+        #login-screen { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
+        #admin-content { display: none; }
+        
+        h1, h2 { color: #333; text-align: center; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; overflow-x: auto; }
+        .tab-btn { padding: 10px 15px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 4px; font-weight: bold; white-space: nowrap; }
+        .tab-btn.active { background: #007bff; color: white; }
+        .section { display: none; }
+        .section.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .form-group { margin-bottom: 15px; background: #fdfdfd; padding: 15px; border: 1px solid #eee; border-radius: 5px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; }
+        button.save-btn, button.login-btn { background: #28a745; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; width: 100%; }
+        button.save-btn { width: auto; }
+        button.login-btn:hover, button.save-btn:hover { background: #218838; }
+        .error-msg { color: red; margin-top: 10px; display: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla de Inicio de Sesión -->
+    <div id="login-screen">
+        <h2>Acceso al Panel</h2>
+        <p style="color: #666; font-size: 14px;">Ingresa la contraseña de administración</p>
+        <div class="form-group" style="border: none; padding: 0; background: none;">
+            <input type="password" id="password-input" placeholder="Contraseña">
+            <button class="login-btn" onclick="verificarPassword()">Ingresar</button>
+            <div id="error-msg" class="error-msg">Contraseña incorrecta</div>
+        </div>
+    </div>
+
+    <!-- Panel de Control Principal -->
+    <div id="admin-content" class="container">
+        <h1>Panel de Control</h1>
+        
+        <!-- Pestañas de navegación -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="cambiarTab('categorias')">Categorías</button>
+            <button class="tab-btn" onclick="cambiarTab('productos')">Productos</button>
+            <button class="tab-btn" onclick="cambiarTab('ajustes_menu')">Ajustes del Menú</button>
+            <button class="tab-btn" onclick="cambiarTab('clientes')">Clientes</button>
+        </div>
+
+        <!-- Sección Categorías -->
+        <div id="categorias" class="section active">
+            <h2>Gestión de Categorías</h2>
+            <div class="form-group">
+                <label>Nombre de la Categoría:</label>
+                <input type="text" id="cat-nombre" placeholder="Ej: Bebidas">
+                <label>Orden (Número):</label>
+                <input type="number" id="cat-orden" placeholder="Ej: 1">
+                <button class="save-btn" onclick="guardarRegistro('categorias')">Agregar Categoría</button>
+            </div>
+            <table id="tabla-categorias">
+                <thead><tr><th>ID</th><th>Nombre</th><th>Orden</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Sección Productos -->
+        <div id="productos" class="section">
+            <h2>Gestión de Productos</h2>
+            <div class="form-group">
+                <label>Categoría:</label>
+                <select id="prod-categoria">
+                    <option value="">Selecciona una categoría...</option>
+                </select>
+
+                <label>Nombre del Producto:</label>
+                <input type="text" id="prod-nombre" placeholder="Ej: Pizza Napolitana">
+
+                <label>Descripción:</label>
+                <textarea id="prod-descripcion" placeholder="Ej: Salsa, mozzarella, tomate en rodajas y ajos"></textarea>
+
+                <label>Precio ($):</label>
+                <input type="number" id="prod-precio" placeholder="Ej: 8500">
+
+                <label>¿Disponible?:</label>
+                <select id="prod-disponible">
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                </select>
+
+                <label>URL de la Imagen:</label>
+                <input type="text" id="prod-imagen" placeholder="https://...">
+
+                <button class="save-btn" onclick="guardarRegistro('productos')">Agregar Producto</button>
+            </div>
+            <table id="tabla-productos">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cat. ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Disponible</th>
+                        <th>Imagen</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Sección Ajustes Menú -->
+        <div id="ajustes_menu" class="section">
+            <h2>Ajustes del Menú y del Comercio</h2>
+            <div class="form-group">
+                <p style="font-size: 13px; color: #666; margin-top: 0;">Aquí puedes configurar los datos generales que se muestran en la cabecera de tu menú digital.</p>
+                
+                <label>Nombre del Negocio:</label>
+                <input type="text" id="ajuste-nombre" placeholder="Ej: Pizzería Don Carlos">
+
+                <label>Dirección del Local:</label>
+                <input type="text" id="ajuste-direccion" placeholder="Ej: San Martín 1234, Posadas">
+
+                <label>Días y Horarios de Atención:</label>
+                <input type="text" id="ajuste-horarios" placeholder="Ej: Lun a Sáb de 20:00 a 00:00 hs">
+
+                <label>Número de WhatsApp (con característica y sin símbolos, ej: 5493764...):</label>
+                <input type="text" id="ajuste-whatsapp" placeholder="Ej: 5493764561004">
+
+                <label>URL de la Imagen de Portada:</label>
+                <input type="text" id="ajuste-portada" placeholder="https://...">
+
+                <button class="save-btn" onclick="guardarAjustes()">Guardar Ajustes</button>
+            </div>
+
+            <table id="tabla-ajustes_menu">
+                <thead><tr><th>Parámetro (Clave)</th><th>Valor</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Sección Clientes -->
+        <div id="clientes" class="section">
+            <h2>Base de Clientes y Pedidos</h2>
+            <table id="tabla-clientes">
+                <thead><tr><th>ID</th><th>Fecha</th><th>Nombre</th><th>Teléfono</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    // Credenciales del proyecto de Supabase
+    const supabaseUrl = 'https://wlnwavthfnovmkrcpbwo.supabase.co';
+    const supabaseKey = 'sb_publishable_fWfdhVMOO5sE0hYDoMuhDA_w-4O90X6';
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    function verificarPassword() {
+        const pass = document.getElementById('password-input').value;
+        if (pass === 'menu.digital') {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('admin-content').style.display = 'block';
+            cargarDatos('categorias');
+            cargarSelectCategorias();
+        } else {
+            document.getElementById('error-msg').style.display = 'block';
+        }
+    }
+
+    document.getElementById('password-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') verificarPassword();
+    });
+
+    function cambiarTab(tabId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        
+        cargarDatos(tabId);
+        if(tabId === 'productos') {
+            cargarSelectCategorias();
+        }
+        if(tabId === 'ajustes_menu') {
+            cargarFormularioAjustes();
+        }
+    }
+
+    async function cargarSelectCategorias() {
+        let select = document.getElementById('prod-categoria');
+        const { data, error } = await _supabase.from('categorias').select('*').order('orden', { ascending: true });
+        if (!error && data) {
+            select.innerHTML = '<option value="">Selecciona una categoría...</option>';
+            data.forEach(cat => {
+                select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`;
+            });
+        }
+    }
+
+    async function cargarFormularioAjustes() {
+        const { data, error } = await _supabase.from('ajustes_menu').select('*');
+        if (!error && data) {
+            data.forEach(item => {
+                if (item.clave === 'nombre_negocio') document.getElementById('ajuste-nombre').value = item.valor || '';
+                if (item.clave === 'direccion') document.getElementById('ajuste-direccion').value = item.valor || '';
+                if (item.clave === 'horarios') document.getElementById('ajuste-horarios').value = item.valor || '';
+                if (item.clave === 'whatsapp_contacto') document.getElementById('ajuste-whatsapp').value = item.valor || '';
+                if (item.clave === 'imagen_portada') document.getElementById('ajuste-portada').value = item.valor || '';
+            });
+        }
+    }
+
+    async function guardarAjustes() {
+        let ajustes = [
+            { clave: 'nombre_negocio', valor: document.getElementById('ajuste-nombre').value },
+            { clave: 'direccion', valor: document.getElementById('ajuste-direccion').value },
+            { clave: 'horarios', valor: document.getElementById('ajuste-horarios').value },
+            { clave: 'whatsapp_contacto', valor: document.getElementById('ajuste-whatsapp').value },
+            { clave: 'imagen_portada', valor: document.getElementById('ajuste-portada').value }
+        ];
+
+        let errorOcurrido = false;
+        for (let adj of ajustes) {
+            // Intentar actualizar upsert por clave
+            const { error } = await _supabase.from('ajustes_menu').upsert(adj, { onConflict: 'clave' });
+            if (error) errorOcurrido = true;
+        }
+
+        if (!errorOcurrido) {
+            alert('¡Ajustes guardados con éxito!');
+            cargarDatos('ajustes_menu');
+        } else {
+            alert('Hubo un error al guardar algunos ajustes. Asegúrate de que la tabla tenga la columna "clave" como Unique o Primary Key.');
+        }
+    }
+
+    async function cargarDatos(tabla) {
+        const tbody = document.querySelector(`#tabla-${tabla} tbody`);
+        tbody.innerHTML = '<tr><td colspan="7">Cargando datos...</td></tr>';
+
+        const { data, error } = await _supabase.from(tabla).select('*');
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="7">Error al cargar datos</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7">No hay registros cargados.</td></tr>`;
+            return;
+        }
+
+        data.forEach(row => {
+            let tr = document.createElement('tr');
+            if (tabla === 'categorias') {
+                tr.innerHTML = `<td>${row.id || ''}</td><td>${row.nombre || ''}</td><td>${row.orden || 0}</td>`;
+            } else if (tabla === 'productos') {
+                tr.innerHTML = `
+                    <td>${row.id || ''}</td>
+                    <td>${row.categoria_id || ''}</td>
+                    <td>${row.nombre || ''}</td>
+                    <td>${row.descripcion || ''}</td>
+                    <td>$${row.precio || ''}</td>
+                    <td>${row.disponible ? 'Sí' : 'No'}</td>
+                    <td><a href="${row.imagen || '#'}" target="_blank">Ver link</a></td>
+                `;
+            } else if (tabla === 'ajustes_menu') {
+                tr.innerHTML = `<td>${row.clave || ''}</td><td>${row.valor || ''}</td>`;
+            } else if (tabla === 'clientes') {
+                tr.innerHTML = `<td>${row.id || ''}</td><td>${row.fecha || ''}</td><td>${row.nombre || ''}</td><td>${row.telefono || ''}</td>`;
+            }
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function guardarRegistro(tabla) {
+        if (tabla === 'categorias') {
+            let nombre = document.getElementById('cat-nombre').value;
+            let orden = Number(document.getElementById('cat-orden').value) || 0;
+            if (!nombre) { alert('Completa el nombre'); return; }
+            
+            const { error } = await _supabase.from('categorias').insert([{ nombre, orden }]);
+            if (!error) { 
+                alert('¡Categoría guardada con éxito!'); 
+                document.getElementById('cat-nombre').value = ''; 
+                document.getElementById('cat-orden').value = ''; 
+                cargarDatos('categorias'); 
+                cargarSelectCategorias();
+            } else {
+                alert('Error al guardar: ' + error.message);
+            }
+        } else if (tabla === 'productos') {
+            let categoria_id = document.getElementById('prod-categoria').value;
+            let nombre = document.getElementById('prod-nombre').value;
+            let descripcion = document.getElementById('prod-descripcion').value;
+            let precio = document.getElementById('prod-precio').value;
+            let disponible = document.getElementById('prod-disponible').value === 'true';
+            let imagen = document.getElementById('prod-imagen').value;
+
+            if (!nombre || !precio || !categoria_id) { 
+                alert('Por favor completa la Categoría, el Nombre y el Precio'); 
+                return; 
+            }
+
+            const { error } = await _supabase.from('productos').insert([{ 
+                categoria_id: Number(categoria_id), 
+                nombre, 
+                descripcion, 
+                precio: Number(precio), 
+                disponible, 
+                imagen 
+            }]);
+
+            if (!error) { 
+                alert('¡Producto guardado con éxito!'); 
+                document.getElementById('prod-categoria').value = '';
+                document.getElementById('prod-nombre').value = ''; 
+                document.getElementById('prod-descripcion').value = ''; 
+                document.getElementById('prod-precio').value = ''; 
+                document.getElementById('prod-imagen').value = ''; 
+                cargarDatos('productos'); 
+            } else {
+                alert('Error al guardar: ' + error.message);
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
