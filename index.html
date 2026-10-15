@@ -19,7 +19,6 @@
         'theme_color': '#0f172a'
     }">
     <style>
-        /* Ocultar barra de desplazamiento en el carrusel pero permitir scroll táctil */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -56,9 +55,7 @@
 
     <!-- Carrusel Superior de Categorías -->
     <nav class="sticky top-0 bg-white shadow-sm z-10 py-3 px-4 border-b border-gray-100">
-        <div id="categorias-carrusel" class="flex space-x-3 overflow-x-auto no-scrollbar max-w-4xl mx-auto">
-            <!-- Las categorías se cargarán aquí -->
-        </div>
+        <div id="categorias-carrusel" class="flex space-x-3 overflow-x-auto no-scrollbar max-w-4xl mx-auto"></div>
     </nav>
 
     <!-- Contenido Principal: Productos -->
@@ -76,7 +73,7 @@
         <span id="carrito-contador" class="absolute -top-1 -right-1 bg-red-500 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center font-bold">0</span>
     </div>
 
-    <!-- Modal del Carrito y Formulario de Pedido -->
+    <!-- Modal del Carrito -->
     <div id="modal-carrito" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
         <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -84,115 +81,82 @@
                 <button onclick="toggleCarrito()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
             </div>
             
-            <div id="lista-carrito" class="divide-y divide-gray-100 max-h-48 overflow-y-auto mb-4">
-                <!-- Items del carrito -->
-            </div>
+            <div id="lista-carrito" class="divide-y divide-gray-100 max-h-48 overflow-y-auto mb-4"></div>
 
             <div class="flex justify-between font-bold text-lg border-t pt-3 mb-4">
                 <span>Total:</span>
                 <span id="carrito-total" class="text-green-600">$0.00</span>
             </div>
 
-            <!-- Formulario de Datos del Cliente y Tipo de Entrega -->
             <div class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
                 <h3 class="font-semibold text-sm text-gray-700">Tipo de Entrega</h3>
-                
                 <div class="flex flex-col space-y-2">
                     <label class="flex items-center space-x-2 text-sm cursor-pointer">
-                        <input type="radio" name="tipoEntrega" value="llevar" checked onchange="actualizarCarritoUI()" class="text-green-600 focus:ring-green-500">
+                        <input type="radio" name="tipoEntrega" value="llevar" checked onchange="actualizarCarritoUI()" class="text-green-600">
                         <span>Para llevar</span>
                     </label>
                     <label class="flex items-center space-x-2 text-sm cursor-pointer">
-                        <input type="radio" name="tipoEntrega" value="envio" onchange="actualizarCarritoUI()" class="text-green-600 focus:ring-green-500">
+                        <input type="radio" name="tipoEntrega" value="envio" onchange="actualizarCarritoUI()" class="text-green-600">
                         <span>Envío a domicilio</span>
                     </label>
                 </div>
-                <div id="texto-envio" class="text-xs text-orange-600 font-bold ml-5 hidden">
-                    Entrega por tan solo $ 1500
-                </div>
-
+                <div id="texto-envio" class="text-xs text-orange-600 font-bold ml-5 hidden">Entrega por tan solo $ 1500</div>
                 <div class="pt-2 border-t border-gray-200">
                     <label class="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
-                    <input type="text" id="input-nombre" placeholder="Tu nombre y apellido" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none">
+                    <input type="text" id="input-nombre" placeholder="Tu nombre y apellido" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Teléfono / Celular *</label>
-                    <input type="tel" id="input-telefono" placeholder="Ej: 3764561004" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none">
+                    <input type="tel" id="input-telefono" placeholder="Ej: 3764561004" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
                 </div>
             </div>
 
-            <button onclick="enviarPedidoWhatsApp()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition shadow-md flex items-center justify-center space-x-2">
-                <span>Enviar Pedido por WhatsApp</span>
+            <button onclick="enviarPedidoWhatsApp()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition">
+                Enviar Pedido por WhatsApp
             </button>
         </div>
     </div>
 
-    <!-- Modal para ver Imagen Grande (Zoom) -->
+    <!-- Modal Zoom Imagen -->
     <div id="modal-imagen" onclick="cerrarImagen()" class="fixed inset-0 bg-black bg-opacity-80 hidden flex items-center justify-center p-4 z-50 cursor-pointer">
-        <img id="imagen-ampliada" src="" class="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain">
+        <img id="imagen-ampliada" src="" class="max-w-full max-h-[85vh] rounded-lg object-contain">
     </div>
 
     <script>
-        // CONFIGURACIÓN DE SUPABASE
         const SUPABASE_URL = 'https://oqkmgopfzrkrbvscqlbc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_fWfdhVMOO5sE0hYDoMuhDA_w-4O90X6'; 
-
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let datosGlobales = {
-            categorias: [],
-            productos: [],
-            ajustes: {}
-        };
+        let datosGlobales = { categorias: [], productos: [], ajustes: {} };
         let carrito = [];
 
         async function cargarMenu() {
             try {
-                // 1. Cargar Categorías
-                let { data: categorias, error: errCat } = await supabaseClient.from('categorias').select('*');
-                if (errCat) throw errCat;
+                let { data: categorias } = await supabaseClient.from('categorias').select('*');
                 datosGlobales.categorias = categorias || [];
 
-                // 2. Cargar Productos
-                let { data: productos, error: errProd } = await supabaseClient.from('productos').select('*');
-                if (errProd) throw errProd;
+                let { data: productos } = await supabaseClient.from('productos').select('*');
                 datosGlobales.productos = productos || [];
 
-                // 3. Cargar Ajustes
-                let { data: ajustes, error: errAdj } = await supabaseClient.from('ajustes_menu').select('*');
-                if (errAdj) throw errAdj;
-                
+                let { data: ajustes } = await supabaseClient.from('ajustes_menu').select('*');
                 if (ajustes) {
-                    ajustes.forEach(item => {
-                        datosGlobales.ajustes[item.clave] = item.valor;
-                    });
+                    ajustes.forEach(item => { datosGlobales.ajustes[item.clave] = item.valor; });
                 }
 
-                // Cargar Nombre del Local
                 const nombreNegocio = datosGlobales.ajustes.nombre_negocio || "Mi Local Digital";
                 document.getElementById('nombre-local').innerText = nombreNegocio;
                 document.title = nombreNegocio + " - Menú Digital";
 
-                // Mostrar Dirección y Horarios si existen en Supabase
-                const direccion = datosGlobales.ajustes.direccion;
-                const horarios = datosGlobales.ajustes.horarios;
-                let mostrarInfo = false;
-
-                if (direccion) {
-                    document.getElementById('texto-direccion').innerText = direccion;
+                if (datosGlobales.ajustes.direccion) {
+                    document.getElementById('texto-direccion').innerText = datosGlobales.ajustes.direccion;
                     document.getElementById('container-direccion').classList.remove('hidden');
-                    mostrarInfo = true;
-                }
-                if (horarios) {
-                    document.getElementById('texto-horarios').innerText = horarios;
-                    document.getElementById('container-horarios').classList.remove('hidden');
-                    mostrarInfo = true;
-                }
-                if (mostrarInfo) {
                     document.getElementById('info-comercio').classList.remove('hidden');
                 }
-
-                // Mostrar Imagen de Portada si existe en Supabase
+                if (datosGlobales.ajustes.horarios) {
+                    document.getElementById('texto-horarios').innerText = datosGlobales.ajustes.horarios;
+                    document.getElementById('container-horarios').classList.remove('hidden');
+                    document.getElementById('info-comercio').classList.remove('hidden');
+                }
                 if (datosGlobales.ajustes.imagen_portada) {
                     document.getElementById('img-portada').src = datosGlobales.ajustes.imagen_portada;
                     document.getElementById('contenedor-portada').classList.remove('hidden');
@@ -200,23 +164,18 @@
 
                 renderizarCarruselCategorias();
                 renderizarProductos('todas');
-
             } catch (error) {
-                console.error("Error al conectar con Supabase:", error);
+                console.error("Error al conectar:", error);
                 document.getElementById('menu-container').innerHTML = `<p class="text-center text-red-500">Error al conectar con la base de datos de Supabase.</p>`;
             }
         }
 
         function renderizarCarruselCategorias() {
             let carrusel = document.getElementById('categorias-carrusel');
-            carrusel.innerHTML = `<button onclick="filtrarCategoria('todas')" class="px-4 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-full whitespace-nowrap transition">Todas</button>`;
+            carrusel.innerHTML = `<button onclick="filtrarCategoria('todas')" class="px-4 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-full whitespace-nowrap">Todas</button>`;
 
             datosGlobales.categorias.sort((a, b) => a.orden - b.orden).forEach(cat => {
-                carrusel.innerHTML += `
-                    <button onclick="filtrarCategoria('${cat.id}')" class="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-full whitespace-nowrap transition">
-                        ${cat.nombre}
-                    </button>
-                `;
+                carrusel.innerHTML += `<button onclick="filtrarCategoria('${cat.id}')" class="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-full whitespace-nowrap">${cat.nombre}</button>`;
             });
         }
 
@@ -230,10 +189,8 @@
 
             categoriasAMostrar.forEach(cat => {
                 let productosCat = datosGlobales.productos.filter(p => p.categoria_id == cat.id && p.disponible);
-                
                 if(productosCat.length > 0) {
                     let catDiv = document.createElement('div');
-                    catDiv.id = `cat-${cat.id}`;
                     catDiv.className = "bg-white rounded-xl shadow-sm p-5 border border-gray-100";
                     
                     let html = `<h2 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2">${cat.nombre}</h2>`;
@@ -243,22 +200,18 @@
                         let tieneImagen = prod.imagen && prod.imagen.trim() !== '';
                         html += `
                             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3.5 bg-gray-50 rounded-xl border border-gray-100 gap-3">
-                                ${tieneImagen ? `<img src="${prod.imagen}" onclick="verImagen('${prod.imagen}')" class="w-full sm:w-28 sm:h-28 h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition flex-shrink-0" title="Ver imagen ampliada">` : ''}
+                                ${tieneImagen ? `<img src="${prod.imagen}" onclick="verImagen('${prod.imagen}')" class="w-full sm:w-28 sm:h-28 h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition flex-shrink-0">` : ''}
                                 <div class="flex-grow w-full">
                                     <h3 class="font-semibold text-base text-slate-900">${prod.nombre}</h3>
                                     <p class="text-xs text-gray-600 mt-0.5 line-clamp-2">${prod.descripcion || ''}</p>
                                     <span class="font-bold text-green-600 text-base mt-1.5 block">$${Number(prod.precio).toFixed(2)}</span>
                                 </div>
-                                <button onclick="agregarAlCarrito('${prod.id}', '${prod.nombre.replace(/'/g, "")}', ${prod.precio})" class="w-full sm:w-auto bg-slate-900 text-white px-4 py-2.5 rounded-xl hover:bg-slate-800 transition flex items-center justify-center space-x-1.5 flex-shrink-0 text-sm font-medium">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
+                                <button onclick="agregarAlCarrito('${prod.id}', '${prod.nombre.replace(/'/g, "")}', ${prod.precio})" class="w-full sm:w-auto bg-slate-900 text-white px-4 py-2.5 rounded-xl hover:bg-slate-800 transition text-sm font-medium flex items-center justify-center space-x-1">
                                     <span>Agregar</span>
                                 </button>
                             </div>
                         `;
                     });
-
                     html += `</div>`;
                     catDiv.innerHTML = html;
                     container.appendChild(catDiv);
@@ -271,7 +224,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Funcionalidad de Zoom de Imagen
         function verImagen(url) {
             document.getElementById('imagen-ampliada').src = url;
             document.getElementById('modal-imagen').classList.remove('hidden');
@@ -281,21 +233,15 @@
             document.getElementById('modal-imagen').classList.add('hidden');
         }
 
-        // Carrito de Compras
         function agregarAlCarrito(id, nombre, precio) {
             let item = carrito.find(i => i.id === id);
-            if(item) {
-                item.cantidad++;
-            } else {
-                carrito.push({ id, nombre, precio, cantidad: 1 });
-            }
+            if(item) { item.cantidad++; } else { carrito.push({ id, nombre, precio, cantidad: 1 }); }
             actualizarCarritoUI();
         }
 
         function actualizarCarritoUI() {
             let contador = document.getElementById('carrito-contador');
-            let totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
-            contador.innerText = totalItems;
+            contador.innerText = carrito.reduce((sum, item) => sum + item.cantidad, 0);
 
             let lista = document.getElementById('lista-carrito');
             lista.innerHTML = '';
@@ -314,15 +260,14 @@
                             </div>
                             <div class="flex items-center space-x-2">
                                 <span class="font-bold text-slate-900">$${(item.precio * item.cantidad).toFixed(2)}</span>
-                                <button onclick="cambiarCantidad(${index}, -1)" class="text-red-500 font-bold px-1.5 py-0.5 bg-red-50 rounded">-</button>
-                                <button onclick="cambiarCantidad(${index}, 1)" class="text-green-600 font-bold px-1.5 py-0.5 bg-red-50 rounded">+</button>
+                                <button onclick="cambiarCantidad(${index}, -1)" class="text-red-500 font-bold px-1.5 bg-red-50 rounded">-</button>
+                                <button onclick="cambiarCantidad(${index}, 1)" class="text-green-600 font-bold px-1.5 bg-red-50 rounded">+</button>
                             </div>
                         </div>
                     `;
                 });
             }
 
-            // Validar Tipo de Entrega y Costo de Envío
             const tipoEntrega = document.querySelector('input[name="tipoEntrega"]:checked').value;
             const textoEnvio = document.getElementById('texto-envio');
             let costoEnvio = 0;
@@ -332,7 +277,6 @@
                 costoEnvio = valorEnvioNum;
                 textoEnvio.innerText = `Entrega por tan solo $ ${costoEnvio}`;
                 textoEnvio.classList.remove('hidden');
-                
                 if (carrito.length > 0) {
                     lista.innerHTML += `
                         <div class="flex justify-between items-center py-2 text-sm text-orange-600 font-semibold">
@@ -345,24 +289,19 @@
                 textoEnvio.classList.add('hidden');
             }
 
-            let totalFinal = subtotal + costoEnvio;
-            document.getElementById('carrito-total').innerText = `$${totalFinal.toFixed(2)}`;
+            document.getElementById('carrito-total').innerText = `$${(subtotal + costoEnvio).toFixed(2)}`;
         }
 
         function cambiarCantidad(index, delta) {
             carrito[index].cantidad += delta;
-            if(carrito[index].cantidad <= 0) {
-                carrito.splice(index, 1);
-            }
+            if(carrito[index].cantidad <= 0) { carrito.splice(index, 1); }
             actualizarCarritoUI();
         }
 
         function toggleCarrito() {
-            let modal = document.getElementById('modal-carrito');
-            modal.classList.toggle('hidden');
+            document.getElementById('modal-carrito').classList.toggle('hidden');
         }
 
-        // Enviar Pedido por WhatsApp y Guardar en Supabase
         async function enviarPedidoWhatsApp() {
             let nombre = document.getElementById('input-nombre').value.trim();
             let telefono = document.getElementById('input-telefono').value.trim();
@@ -371,7 +310,6 @@
                 alert('Por favor, completa tu Nombre y Teléfono antes de enviar el pedido.');
                 return;
             }
-
             if(carrito.length === 0) {
                 alert('Tu carrito está vacío.');
                 return;
@@ -382,14 +320,9 @@
 
             try {
                 let fechaTexto = new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
-
-                await supabaseClient.from('clientes').insert([{ 
-                    nombre: nombre, 
-                    telefono: telefono, 
-                    fecha: fechaTexto 
-                }]);
+                await supabaseClient.from('clientes').insert([{ nombre: nombre, telefono: telefono, fecha: fechaTexto }]);
             } catch (e) {
-                console.log("Error al registrar el cliente:", e);
+                console.log("Error al registrar cliente:", e);
             }
 
             let mensaje = `Hola, tenés un nuevo pedido:%0A%0A`;
@@ -414,12 +347,9 @@
             mensaje += `%0A💰 *Total a Pagar:* $${totalFinal.toFixed(2)}`;
 
             let numeroLocal = datosGlobales.ajustes.whatsapp_contacto || "5493764561004";
-
-            let urlWhatsApp = `https://wa.me/${numeroLocal}?text=${mensaje}`;
-            window.open(urlWhatsApp, '_blank');
+            window.open(`https://wa.me/${numeroLocal}?text=${mensaje}`, '_blank');
         }
 
-        // Iniciar carga al abrir la página
         cargarMenu();
     </script>
 </body>
