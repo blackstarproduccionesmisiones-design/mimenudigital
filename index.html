@@ -220,31 +220,9 @@
             });
         }
 
-       function renderizarProductos() {
-            // ... (todo el código de renderizado de productos) ...
-            catDiv.innerHTML = html;
-            container.appendChild(catDiv);
-            } 
-        }); 
-    } 
-
-    // <--- PEGÁ ESTO EXACTAMENTE AQUÍ (Líneas 219 - 227) --->
-    function filtrarCategoria(catId) {
-        if(catId === 'todas') {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            let elemento = document.getElementById(`cat-${catId}`);
-            if(elemento) {
-                elemento.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-    }
-
-    // Funcionalidad de Zoom de Imagen
-    function verImagen(url) {
-        document.getElementById('imagen-ampliada').src = url;
-        document.getElementById('modal-imagen').classList.remove('hidden');
-    }
+        function renderizarProductos() {
+            let container = document.getElementById('menu-container');
+            container.innerHTML = '';
 
             let categoriasAMostrar = datosGlobales.categorias.sort((a, b) => a.orden - b.orden);
 
