@@ -108,7 +108,7 @@
                     </label>
                 </div>
                 <div id="texto-envio" class="text-xs text-orange-600 font-bold ml-5 hidden">
-                    Entrega por tan saldo $ 2500
+                    Entrega por tan solo $ 1500
                 </div>
 
                 <div class="pt-2 border-t border-gray-200">
@@ -134,8 +134,8 @@
 
     <script>
         // CONFIGURACIÓN DE SUPABASE
-        const SUPABASE_URL = 'https://wlnwavthfnovmkrcpbwo.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_fWfdhVMOO5sE0hYDoMuhDA_w-4O90X6'; 
+        const SUPABASE_URL = 'https://oqkmgopfzrkrbvscqlbc.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_...'; // (Mantené tu key actual)
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -199,7 +199,7 @@
                 }
 
                 renderizarCarruselCategorias();
-                renderizarProductos();
+                renderizarProductos('todas');
 
             } catch (error) {
                 console.error("Error al conectar con Supabase:", error);
@@ -220,11 +220,13 @@
             });
         }
 
-        function renderizarProductos() {
+        function renderizarProductos(categoriaFiltro = 'todas') {
             let container = document.getElementById('menu-container');
             container.innerHTML = '';
 
-            let categoriasAMostrar = datosGlobales.categorias.sort((a, b) => a.orden - b.orden);
+            let categoriasAMostrar = categoriaFiltro === 'todas' 
+                ? datosGlobales.categorias.sort((a, b) => a.orden - b.orden)
+                : datosGlobales.categorias.filter(c => c.id == categoriaFiltro);
 
             categoriasAMostrar.forEach(cat => {
                 let productosCat = datosGlobales.productos.filter(p => p.categoria_id == cat.id && p.disponible);
@@ -265,14 +267,8 @@
         }
 
         function filtrarCategoria(catId) {
-            if(catId === 'todas') {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-                let elemento = document.getElementById(`cat-${catId}`);
-                if(elemento) {
-                    elemento.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }
+            renderizarProductos(catId);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // Funcionalidad de Zoom de Imagen
@@ -330,16 +326,18 @@
             const tipoEntrega = document.querySelector('input[name="tipoEntrega"]:checked').value;
             const textoEnvio = document.getElementById('texto-envio');
             let costoEnvio = 0;
+            let valorEnvioNum = Number(datosGlobales.ajustes.costo_envio) || 1500;
 
             if (tipoEntrega === 'envio') {
-                costoEnvio = 2500;
+                costoEnvio = valorEnvioNum;
+                textoEnvio.innerText = `Entrega por tan solo $ ${costoEnvio}`;
                 textoEnvio.classList.remove('hidden');
                 
                 if (carrito.length > 0) {
                     lista.innerHTML += `
                         <div class="flex justify-between items-center py-2 text-sm text-orange-600 font-semibold">
                             <span>Envío a domicilio</span>
-                            <span>$2500.00</span>
+                            <span>$${costoEnvio.toFixed(2)}</span>
                         </div>
                     `;
                 }
@@ -407,9 +405,9 @@
                 mensaje += `• ${item.cantidad}x ${item.nombre} ($${itemSubtotal.toFixed(2)})%0A`;
             });
 
-            let costoEnvio = (tipoEntregaSelect === 'envio') ? 2500 : 0;
+            let costoEnvio = (tipoEntregaSelect === 'envio') ? (Number(datosGlobales.ajustes.costo_envio) || 1500) : 0;
             if (costoEnvio > 0) {
-                mensaje += `• Envío a domicilio: $2500.00%0A`;
+                mensaje += `• Envío a domicilio: $${costoEnvio.toFixed(2)}%0A`;
             }
 
             let totalFinal = subtotal + costoEnvio;
