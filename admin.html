@@ -29,6 +29,9 @@
         button.save-btn { width: auto; }
         button.login-btn:hover, button.save-btn:hover { background: #218838; }
         .error-msg { color: red; margin-top: 10px; display: none; font-size: 14px; }
+        .btn-editar { background: #ffc107; color: #000; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-eliminar { background: #dc3545; color: #fff; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-weight: bold; }
+        .btn-cancelar { background: #6c757d; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; width: auto; display: none; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -60,14 +63,16 @@
         <div id="categorias" class="section active">
             <h2>Gestión de Categorías</h2>
             <div class="form-group">
+                <input type="hidden" id="cat-id">
                 <label>Nombre de la Categoría:</label>
                 <input type="text" id="cat-nombre" placeholder="Ej: Bebidas">
                 <label>Orden (Número):</label>
                 <input type="number" id="cat-orden" placeholder="Ej: 1">
-                <button class="save-btn" onclick="guardarRegistro('categorias')">Agregar Categoría</button>
+                <button id="btn-guardar-cat" class="save-btn" onclick="guardarRegistro('categorias')">Agregar Categoría</button>
+                <button id="btn-cancelar-cat" class="btn-cancelar" onclick="cancelarEdicion('categorias')">Cancelar</button>
             </div>
             <table id="tabla-categorias">
-                <thead><tr><th>ID</th><th>Nombre</th><th>Orden</th></tr></thead>
+                <thead><tr><th>ID</th><th>Nombre</th><th>Orden</th><th>Acciones</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -76,6 +81,7 @@
         <div id="productos" class="section">
             <h2>Gestión de Productos</h2>
             <div class="form-group">
+                <input type="hidden" id="prod-id">
                 <label>Categoría:</label>
                 <select id="prod-categoria">
                     <option value="">Selecciona una categoría...</option>
@@ -99,7 +105,8 @@
                 <label>URL de la Imagen:</label>
                 <input type="text" id="prod-imagen" placeholder="https://...">
 
-                <button class="save-btn" onclick="guardarRegistro('productos')">Agregar Producto</button>
+                <button id="btn-guardar-prod" class="save-btn" onclick="guardarRegistro('productos')">Agregar Producto</button>
+                <button id="btn-cancelar-prod" class="btn-cancelar" onclick="cancelarEdicion('productos')">Cancelar</button>
             </div>
             <table id="tabla-productos">
                 <thead>
@@ -111,6 +118,7 @@
                         <th>Precio</th>
                         <th>Disponible</th>
                         <th>Imagen</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -158,7 +166,6 @@
     </div>
 
 <script>
-    // Credenciales del proyecto de Supabase
     const supabaseUrl = 'https://wlnwavthfnovmkrcpbwo.supabase.co';
     const supabaseKey = 'sb_publishable_fWfdhVMOO5sE0hYDoMuhDA_w-4O90X6';
     const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -229,7 +236,6 @@
 
         let errorOcurrido = false;
         for (let adj of ajustes) {
-            // Intentar actualizar upsert por clave
             const { error } = await _supabase.from('ajustes_menu').upsert(adj, { onConflict: 'clave' });
             if (error) errorOcurrido = true;
         }
@@ -238,39 +244,51 @@
             alert('¡Ajustes guardados con éxito!');
             cargarDatos('ajustes_menu');
         } else {
-            alert('Hubo un error al guardar algunos ajustes. Asegúrate de que la tabla tenga la columna "clave" como Unique o Primary Key.');
+            alert('Hubo un error al guardar algunos ajustes.');
         }
     }
 
     async function cargarDatos(tabla) {
         const tbody = document.querySelector(`#tabla-${tabla} tbody`);
-        tbody.innerHTML = '<tr><td colspan="7">Cargando datos...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8">Cargando datos...</td></tr>';
 
         const { data, error } = await _supabase.from(tabla).select('*');
         if (error) {
-            tbody.innerHTML = `<tr><td colspan="7">Error al cargar datos</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8">Error al cargar datos</td></tr>`;
             return;
         }
 
         tbody.innerHTML = '';
         if (data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7">No hay registros cargados.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8">No hay registros cargados.</td></tr>`;
             return;
         }
 
         data.forEach(row => {
             let tr = document.createElement('tr');
             if (tabla === 'categorias') {
-                tr.innerHTML = `<td>${row.id || ''}</td><td>${row.nombre || ''}</td><td>${row.orden || 0}</td>`;
+                tr.innerHTML = `
+                    <td>${row.id}</td>
+                    <td>${row.nombre || ''}</td>
+                    <td>${row.orden || 0}</td>
+                    <td>
+                        <button class="btn-editar" onclick="editarCategoria(${row.id}, '${row.nombre}', ${row.orden})">Editar</button>
+                        <button class="btn-eliminar" onclick="eliminarRegistro('categorias', ${row.id})">Eliminar</button>
+                    </td>
+                `;
             } else if (tabla === 'productos') {
                 tr.innerHTML = `
-                    <td>${row.id || ''}</td>
+                    <td>${row.id}</td>
                     <td>${row.categoria_id || ''}</td>
                     <td>${row.nombre || ''}</td>
                     <td>${row.descripcion || ''}</td>
                     <td>$${row.precio || ''}</td>
                     <td>${row.disponible ? 'Sí' : 'No'}</td>
                     <td><a href="${row.imagen || '#'}" target="_blank">Ver link</a></td>
+                    <td>
+                        <button class="btn-editar" onclick='editarProducto(${JSON.stringify(row)})'>Editar</button>
+                        <button class="btn-eliminar" onclick="eliminarRegistro('productos', ${row.id})">Eliminar</button>
+                    </td>
                 `;
             } else if (tabla === 'ajustes_menu') {
                 tr.innerHTML = `<td>${row.clave || ''}</td><td>${row.valor || ''}</td>`;
@@ -283,21 +301,29 @@
 
     async function guardarRegistro(tabla) {
         if (tabla === 'categorias') {
+            let id = document.getElementById('cat-id').value;
             let nombre = document.getElementById('cat-nombre').value;
             let orden = Number(document.getElementById('cat-orden').value) || 0;
             if (!nombre) { alert('Completa el nombre'); return; }
             
-            const { error } = await _supabase.from('categorias').insert([{ nombre, orden }]);
+            let query;
+            if (id) {
+                query = _supabase.from('categorias').update({ nombre, orden }).eq('id', id);
+            } else {
+                query = _supabase.from('categorias').insert([{ nombre, orden }]);
+            }
+
+            const { error } = await query;
             if (!error) { 
-                alert('¡Categoría guardada con éxito!'); 
-                document.getElementById('cat-nombre').value = ''; 
-                document.getElementById('cat-orden').value = ''; 
+                alert(id ? '¡Categoría actualizada con éxito!' : '¡Categoría guardada con éxito!'); 
+                cancelarEdicion('categorias');
                 cargarDatos('categorias'); 
                 cargarSelectCategorias();
             } else {
                 alert('Error al guardar: ' + error.message);
             }
         } else if (tabla === 'productos') {
+            let id = document.getElementById('prod-id').value;
             let categoria_id = document.getElementById('prod-categoria').value;
             let nombre = document.getElementById('prod-nombre').value;
             let descripcion = document.getElementById('prod-descripcion').value;
@@ -310,25 +336,84 @@
                 return; 
             }
 
-            const { error } = await _supabase.from('productos').insert([{ 
+            let datosProd = { 
                 categoria_id: Number(categoria_id), 
                 nombre, 
                 descripcion, 
                 precio: Number(precio), 
                 disponible, 
                 imagen 
-            }]);
+            };
 
+            let query;
+            if (id) {
+                query = _supabase.from('productos').update(datosProd).eq('id', id);
+            } else {
+                query = _supabase.from('productos').insert([datosProd]);
+            }
+
+            const { error } = await query;
             if (!error) { 
-                alert('¡Producto guardado con éxito!'); 
-                document.getElementById('prod-categoria').value = '';
-                document.getElementById('prod-nombre').value = ''; 
-                document.getElementById('prod-descripcion').value = ''; 
-                document.getElementById('prod-precio').value = ''; 
-                document.getElementById('prod-imagen').value = ''; 
+                alert(id ? '¡Producto actualizado con éxito!' : '¡Producto guardado con éxito!'); 
+                cancelarEdicion('productos');
                 cargarDatos('productos'); 
             } else {
                 alert('Error al guardar: ' + error.message);
+            }
+        }
+    }
+
+    function editarCategoria(id, nombre, orden) {
+        document.getElementById('cat-id').value = id;
+        document.getElementById('cat-nombre').value = nombre;
+        document.getElementById('cat-orden').value = orden;
+        document.getElementById('btn-guardar-cat').innerText = 'Actualizar Categoría';
+        document.getElementById('btn-cancelar-cat').style.display = 'inline-block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function editarProducto(prod) {
+        document.getElementById('prod-id').value = prod.id;
+        document.getElementById('prod-categoria').value = prod.categoria_id;
+        document.getElementById('prod-nombre').value = prod.nombre;
+        document.getElementById('prod-descripcion').value = prod.descripcion || '';
+        document.getElementById('prod-precio').value = prod.precio;
+        document.getElementById('prod-disponible').value = prod.disponible ? 'true' : 'false';
+        document.getElementById('prod-imagen').value = prod.imagen || '';
+        document.getElementById('btn-guardar-prod').innerText = 'Actualizar Producto';
+        document.getElementById('btn-cancelar-prod').style.display = 'inline-block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicion(tabla) {
+        if (tabla === 'categorias') {
+            document.getElementById('cat-id').value = '';
+            document.getElementById('cat-nombre').value = '';
+            document.getElementById('cat-orden').value = '';
+            document.getElementById('btn-guardar-cat').innerText = 'Agregar Categoría';
+            document.getElementById('btn-cancelar-cat').style.display = 'none';
+        } else if (tabla === 'productos') {
+            document.getElementById('prod-id').value = '';
+            document.getElementById('prod-categoria').value = '';
+            document.getElementById('prod-nombre').value = '';
+            document.getElementById('prod-descripcion').value = '';
+            document.getElementById('prod-precio').value = '';
+            document.getElementById('prod-disponible').value = 'true';
+            document.getElementById('prod-imagen').value = '';
+            document.getElementById('btn-guardar-prod').innerText = 'Agregar Producto';
+            document.getElementById('btn-cancelar-prod').style.display = 'none';
+        }
+    }
+
+    async function eliminarRegistro(tabla, id) {
+        if (confirm(`¿Estás seguro de que deseas eliminar este elemento de ${tabla}?`)) {
+            const { error } = await _supabase.from(tabla).delete().eq('id', id);
+            if (!error) {
+                alert('Registro eliminado correctamente.');
+                cargarDatos(tabla);
+                if (tabla === 'categorias') cargarSelectCategorias();
+            } else {
+                alert('Error al eliminar: ' + error.message);
             }
         }
     }
